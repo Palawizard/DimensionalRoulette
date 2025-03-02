@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "dimensional_roulette",
+	"version": "1.0.0",
+	"name": "Dimensional Roulette",
+	"description": "A chaotic mod where taking damage teleports you to a random dimension!",
+	"authors": [
+	  "Palawi"
+	],
+	"contact": {
+	  "homepage": "https://yourwebsite.com",
+	  "sources": "https://github.com/yourgithub/dimensional-roulette",
+	  "issues": "https://github.com/yourgithub/dimensional-roulette/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/dimensional_roulette/icon.png",
+	"environment": "*",
+	"entrypoints": {
+	  "main": [
+		"com.palawi.dimensionalroulette.DimensionalRoulette"
+	  ]
+	},
+	"mixins": [
+	  "dimensional_roulette.mixins.json"
+	],
+	"depends": {
+	  "fabricloader": ">=0.16.10",
+	  "minecraft": "1.21.1",
+	  "java": ">=21",
+	  "fabric-api": "*"
+	},
+	"suggests": {
+	  "immersive-portals": "*",
+	  "another-dimension-mod": "*"
+	}
+  }
+  
