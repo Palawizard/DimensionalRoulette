@@ -13,6 +13,7 @@ import com.palawi.dimensionalroulette.events.DamageEventHandler;
 public class DimensionalRoulette implements ModInitializer {
     public static final String MOD_ID = "dimensional_roulette";
     private static boolean twistEnabled = false; // Default: Disabled
+    private static boolean spawnMode = false; // Default: Relative Mode (true = spawn, false = relative)
 
     @Override
     public void onInitialize() {
@@ -34,6 +35,12 @@ public class DimensionalRoulette implements ModInitializer {
                     .executes(this::disableTwist))
                 .then(CommandManager.literal("status")
                     .executes(this::statusTwist))
+                .then(CommandManager.literal("settings")
+                    .then(CommandManager.literal("mode")
+                        .then(CommandManager.literal("spawn").executes(this::setSpawnMode))
+                        .then(CommandManager.literal("relative").executes(this::setRelativeMode))
+                    )
+                )
             );
         });
     }
@@ -52,12 +59,29 @@ public class DimensionalRoulette implements ModInitializer {
 
     private int statusTwist(CommandContext<ServerCommandSource> context) {
         String status = twistEnabled ? "ENABLED" : "DISABLED";
-        context.getSource().sendFeedback(() -> Text.literal("Dimensional Roulette twist is " + status), true);
+        String mode = spawnMode ? "SPAWN MODE" : "RELATIVE MODE";
+        context.getSource().sendFeedback(() -> Text.literal("Dimensional Roulette twist is " + status + " (" + mode + ")"), true);
         return Command.SINGLE_SUCCESS;
     }
 
-    // Getter for event handler to check status
+    private int setSpawnMode(CommandContext<ServerCommandSource> context) {
+        spawnMode = true;
+        context.getSource().sendFeedback(() -> Text.literal("Teleport mode set to SPAWN"), true);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int setRelativeMode(CommandContext<ServerCommandSource> context) {
+        spawnMode = false;
+        context.getSource().sendFeedback(() -> Text.literal("Teleport mode set to RELATIVE"), true);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    // Getter methods for event handling
     public static boolean isTwistEnabled() {
         return twistEnabled;
+    }
+
+    public static boolean isSpawnMode() {
+        return spawnMode;
     }
 }

@@ -20,8 +20,6 @@ import net.minecraft.world.World;
 
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import com.palawi.dimensionalroulette.DimensionalRoulette;
 
@@ -66,13 +64,17 @@ public class DamageEventHandler {
             safePos = createSafeSpace(targetWorld, 40, 2, 0);
         } else if (dimensionId.equals(Identifier.of("ceilands", "the_ceilands"))) {
             safePos = new BlockPos(0, FLOATING_PLATFORM_Y, 0);
-        } else if (dimensionId.equals(Identifier.of("the_afterdark", "afterdark"))) {
-            safePos = createSafeSpace(targetWorld, 0, -12, 0);
         } else if (dimensionId.equals(Identifier.of("bro", "void"))) {
             safePos = createSafeSpace(targetWorld, 0, 23, 0);
         } else {
-            BlockPos spawnPos = targetWorld.getSpawnPos();
-            safePos = findSafeLanding(targetWorld, spawnPos.getX(), spawnPos.getZ());
+            if (DimensionalRoulette.isSpawnMode()) {
+                // SPAWN MODE: Teleport near dimension spawn
+                BlockPos spawnPos = targetWorld.getSpawnPos();
+                safePos = findSafeLanding(targetWorld, spawnPos.getX(), spawnPos.getZ());
+            } else {
+                // RELATIVE MODE: Keep player's X/Z coordinates
+                safePos = findSafeLanding(targetWorld, player.getBlockPos().getX(), player.getBlockPos().getZ());
+            }
         }
     
         // Fix spawning on the Nether Roof (above Y=128)
@@ -83,11 +85,42 @@ public class DamageEventHandler {
         Vec3d spawnVec = Vec3d.ofCenter(safePos);
         player.teleport(targetWorld, spawnVec.x, spawnVec.y, spawnVec.z, player.getYaw(), player.getPitch());
     
+        // 🔥 If the player is inside a block, carve out a 3x3x3 space
+        if (isPlayerInsideBlock(targetWorld, safePos)) {
+            carveEscapeRoom(targetWorld, safePos);
+        }
+    
+        // 🔥 If the player is in the air, create a floating platform immediately
+        if (isPlayerInAir(targetWorld, safePos)) {
+            createFloatingPlatform(targetWorld, safePos.down());
+        }
+    
         // Remove Bedrock under feet if player spawns on it
         removeBedrockUnderFeet(targetWorld, safePos);
-    
-        schedulePlatformCheck(player, targetWorld);
+    }    
+
+    private static boolean isPlayerInAir(ServerWorld world, BlockPos pos) {
+        return world.getBlockState(pos.down()).isAir();
     }
+    
+
+    private static boolean isPlayerInsideBlock(ServerWorld world, BlockPos pos) {
+        return !world.getBlockState(pos).isAir() && !world.getBlockState(pos.up()).isAir();
+    }
+
+    private static void carveEscapeRoom(ServerWorld world, BlockPos center) {
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    BlockPos blockPos = center.add(dx, dy, dz);
+                    if (!world.getBlockState(blockPos).isOf(Blocks.BEDROCK)) {
+                        world.setBlockState(blockPos, Blocks.AIR.getDefaultState());
+                    }
+                }
+            }
+        }
+    }
+    
     
     /**
      * Removes any bedrock **directly below** the player's feet in the chunk.
@@ -166,15 +199,6 @@ public class DamageEventHandler {
         if (!player.getInventory().insertStack(item)) {
             player.dropItem(item, false);
         }
-    }
-
-    private static void schedulePlatformCheck(ServerPlayerEntity player, ServerWorld world) {
-        Executors.newSingleThreadScheduledExecutor().schedule(() -> {
-            if (!player.isOnGround()) {
-                BlockPos platformPos = player.getBlockPos().down();
-                createFloatingPlatform(world, platformPos);
-            }
-        }, 4, TimeUnit.SECONDS);
     }
 
     private static BlockPos findSafeLanding(ServerWorld world, int x, int z) {
