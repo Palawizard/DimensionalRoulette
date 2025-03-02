@@ -23,11 +23,13 @@ import java.util.Random;
 
 import com.palawi.dimensionalroulette.DimensionalRoulette;
 
+
 public class DamageEventHandler {
     private static final Random RANDOM = new Random();
     private static final int SAFE_Y_MIN = 10;
     private static final int SAFE_Y_MAX = 200;
     private static final int FLOATING_PLATFORM_Y = 80;
+
 
     public static void register() {
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, amount, afterHealth, isFatal) -> {
@@ -49,55 +51,77 @@ public class DamageEventHandler {
         RegistryKey<World> randomDimension;
         do {
             randomDimension = dimensions.get(RANDOM.nextInt(dimensions.size()));
-        } while (randomDimension.equals(player.getWorld().getRegistryKey()));
+        } while (randomDimension.equals(player.getWorld().getRegistryKey()) || 
+                DimensionalRoulette.isDimensionDisabled(randomDimension.getValue().toString()));
     
         ServerWorld targetWorld = server.getWorld(randomDimension);
         if (targetWorld == null) return;
     
         player.extinguish();
         player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOW_FALLING, 200, 0));
+        player.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 100, 0)); // 5 sec fire resistance
     
         Identifier dimensionId = randomDimension.getValue();
         BlockPos safePos;
+        int targetX = player.getBlockPos().getX();
+        int targetZ = player.getBlockPos().getZ();
     
-        if (dimensionId.equals(Identifier.of("backrooms", "level_0"))) {
-            safePos = createSafeSpace(targetWorld, 40, 2, 0);
-        } else if (dimensionId.equals(Identifier.of("ceilands", "the_ceilands"))) {
-            safePos = new BlockPos(0, FLOATING_PLATFORM_Y, 0);
-        } else if (dimensionId.equals(Identifier.of("bro", "void"))) {
-            safePos = createSafeSpace(targetWorld, 0, 23, 0);
-        } else {
+        // ✅ Vérifier d'abord si un custom spawn existe pour cette dimension
+        if (DimensionalRoulette.getCustomSpawns().containsKey(dimensionId.toString())) {
+            safePos = DimensionalRoulette.getCustomSpawns().get(dimensionId.toString());
+        }
+        // Fixe le spawn pour `hiddenrealm:silent_bazaar`
+        else if (dimensionId.equals(Identifier.of("hiddenrealm", "silent_bazaar"))) {
+            safePos = new BlockPos(-8, 132, -7);
+        }
+        // Fixe le X = 40 si `spawnMode` est activé pour `backrooms:level_0`
+        else if (dimensionId.equals(Identifier.of("backrooms", "level_0"))) {
             if (DimensionalRoulette.isSpawnMode()) {
-                // SPAWN MODE: Teleport near dimension spawn
+                BlockPos spawnPos = targetWorld.getSpawnPos();
+                safePos = new BlockPos(40, 2, spawnPos.getZ()); // Override X à 40
+            } else {
+                safePos = new BlockPos(targetX, 2, targetZ);
+            }
+        }
+        // Fixe uniquement le Y pour ces dimensions
+        else if (dimensionId.equals(Identifier.of("ceilands", "the_ceilands"))) {
+            safePos = new BlockPos(targetX, FLOATING_PLATFORM_Y, targetZ);
+        } else if (dimensionId.equals(Identifier.of("bro", "void"))) {
+            safePos = new BlockPos(targetX, 23, targetZ);
+        }
+        // Mode spawn vs relative
+        else {
+            if (DimensionalRoulette.isSpawnMode()) {
                 BlockPos spawnPos = targetWorld.getSpawnPos();
                 safePos = findSafeLanding(targetWorld, spawnPos.getX(), spawnPos.getZ());
             } else {
-                // RELATIVE MODE: Keep player's X/Z coordinates
-                safePos = findSafeLanding(targetWorld, player.getBlockPos().getX(), player.getBlockPos().getZ());
+                safePos = findSafeLanding(targetWorld, targetX, targetZ);
             }
         }
     
-        // Fix spawning on the Nether Roof (above Y=128)
+        // Vérification du Nether Roof (évite le TP au-dessus de Y=128)
         if (targetWorld.getRegistryKey().equals(World.NETHER) && safePos.getY() > 127) {
-            safePos = new BlockPos(safePos.getX(), 32, safePos.getZ()); // Move player lower in Nether
+            safePos = new BlockPos(safePos.getX(), 32, safePos.getZ()); // Déplace le joueur plus bas
         }
     
+        // Téléportation
         Vec3d spawnVec = Vec3d.ofCenter(safePos);
         player.teleport(targetWorld, spawnVec.x, spawnVec.y, spawnVec.z, player.getYaw(), player.getPitch());
     
-        // 🔥 If the player is inside a block, carve out a 3x3x3 space
+        // Si le joueur est dans un bloc, creuser une salle de 3x3x3
         if (isPlayerInsideBlock(targetWorld, safePos)) {
             carveEscapeRoom(targetWorld, safePos);
         }
     
-        // 🔥 If the player is in the air, create a floating platform immediately
+        // Si le joueur est dans l'air, créer une plateforme de sécurité
         if (isPlayerInAir(targetWorld, safePos)) {
             createFloatingPlatform(targetWorld, safePos.down());
         }
     
-        // Remove Bedrock under feet if player spawns on it
+        // Supprime le bedrock sous les pieds du joueur si nécessaire
         removeBedrockUnderFeet(targetWorld, safePos);
     }    
+    
 
     private static boolean isPlayerInAir(ServerWorld world, BlockPos pos) {
         return world.getBlockState(pos.down()).isAir();
@@ -167,7 +191,7 @@ public class DamageEventHandler {
     
         if (!hasElytra) {
             ItemStack elytra = new ItemStack(Items.ELYTRA);
-            elytra.setDamage(elytra.getMaxDamage() - 10);
+            elytra.setDamage(elytra.getMaxDamage() - 30);
             elytra.set(DataComponentTypes.CUSTOM_NAME, 
                 Text.literal(elytraName).formatted(Formatting.LIGHT_PURPLE, Formatting.ITALIC));
             dropOrReplace(player, elytra);
@@ -213,18 +237,6 @@ public class DamageEventHandler {
 
     private static boolean isSafeLocation(ServerWorld world, BlockPos pos) {
         return world.getBlockState(pos).isAir() && world.getBlockState(pos.down()).isSolidBlock(world, pos.down());
-    }
-
-    private static BlockPos createSafeSpace(ServerWorld world, int x, int y, int z) {
-        BlockPos center = new BlockPos(x, y, z);
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = 0; dy <= 2; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    world.setBlockState(center.add(dx, dy, dz), Blocks.AIR.getDefaultState());
-                }
-            }
-        }
-        return center;
     }
 
     private static void createFloatingPlatform(ServerWorld world, BlockPos pos) {
