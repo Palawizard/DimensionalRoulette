@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "dimensional_roulette",
-	"version": "1.0.0",
+	"version": "1.21.1-1.0.0",
 	"name": "Dimensional Roulette",
 	"description": "A chaotic mod where taking damage teleports you to a random dimension!",
 	"authors": [
