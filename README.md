@@ -20,7 +20,7 @@ A chaotic mod where taking damage teleports you to a **random dimension**! 🌌
 
 ## 🔧 Compatibility
 👉 Works with **Fabric 1.21.1**  
-👉 Compatible with **Aether, Backrooms, and other modded dimensions**.
+👉 Compatible with **Aether, Backrooms, and other modded dimensions**.  
 ❗ If you find any **incompatible mods**, **makes sure to let us know !
 
 ## 📝 License
