@@ -16,6 +16,8 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import java.util.EnumSet;
+import net.minecraft.network.packet.s2c.play.PositionFlag;
 
 
 import java.util.List;
@@ -106,7 +108,8 @@ public class DamageEventHandler {
     
         // Téléportation
         Vec3d spawnVec = Vec3d.ofCenter(safePos);
-        player.teleport(targetWorld, spawnVec.x, spawnVec.y, spawnVec.z, player.getYaw(), player.getPitch());
+        player.teleport(targetWorld, spawnVec.x, spawnVec.y, spawnVec.z, 
+            EnumSet.noneOf(PositionFlag.class), player.getYaw(), player.getPitch(), false);
     
         // Si le joueur est dans un bloc, creuser une salle de 3x3x3
         if (isPlayerInsideBlock(targetWorld, safePos)) {

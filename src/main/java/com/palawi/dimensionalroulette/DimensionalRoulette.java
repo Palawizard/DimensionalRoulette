@@ -33,6 +33,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Map;
+import java.util.EnumSet;
+import net.minecraft.network.packet.s2c.play.PositionFlag;
+
+
+
 
 import com.palawi.dimensionalroulette.events.DamageEventHandler;
 
@@ -202,7 +207,9 @@ public class DimensionalRoulette implements ModInitializer {
         }
     
         Vec3d spawnVec = Vec3d.ofCenter(safePos);
-        player.teleport(targetWorld, spawnVec.x, spawnVec.y, spawnVec.z, player.getYaw(), player.getPitch());
+        player.teleport(targetWorld, spawnVec.x, spawnVec.y, spawnVec.z, 
+            EnumSet.noneOf(PositionFlag.class), player.getYaw(), player.getPitch(), false);
+
     
         // Grant Fire Resistance for 5 seconds
         player.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 100, 0));

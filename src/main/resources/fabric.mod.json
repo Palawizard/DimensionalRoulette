@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "dimensional_roulette",
-	"version": "1.21.1-1.0.2",
+	"version": "1.21.4-1.0.2",
 	"name": "Dimensional Roulette",
 	"description": "A chaotic mod where taking damage teleports you to a random dimension!",
 	"authors": [
@@ -25,7 +25,7 @@
 	],
 	"depends": {
 	  "fabricloader": ">=0.16.10",
-	  "minecraft": "1.21.1",
+	  "minecraft": "1.21.4",
 	  "java": ">=21",
 	  "fabric-api": "*"
 	},
