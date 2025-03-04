@@ -3,6 +3,8 @@
 # **Dimensional Roulette**  
 A chaotic mod where taking damage teleports you to a **random dimension**! 🌌  
 
+![Example](https://s3.gifyu.com/images/bb9uW.gif)
+
 ## 🌟 **Features**  
 - **Teleportation Chaos:** Whenever you take **damage**, you get **randomly teleported** to another dimension.  
 - **Custom Spawns:** Admins can now **set custom spawn points per dimension**.  
