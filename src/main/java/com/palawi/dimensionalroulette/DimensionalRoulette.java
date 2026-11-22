@@ -96,7 +96,6 @@ public class DimensionalRoulette implements ModInitializer {
                             .executes(this::setCustomSpawn)
                         )
                     )
-                    // 🔥 FIXED: "disable" and "enable" commands are now at the correct level
                     .then(CommandManager.literal("disable")
                         .then(CommandManager.argument("dimension", StringArgumentType.string())
                             .executes(this::disableDimension)

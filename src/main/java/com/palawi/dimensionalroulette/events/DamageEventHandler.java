@@ -68,7 +68,7 @@ public class DamageEventHandler {
         int targetX = player.getBlockPos().getX();
         int targetZ = player.getBlockPos().getZ();
     
-        // ✅ Vérifier d'abord si un custom spawn existe pour cette dimension
+        // Vérifier d'abord si un custom spawn existe pour cette dimension
         if (DimensionalRoulette.getCustomSpawns().containsKey(dimensionId.toString())) {
             safePos = DimensionalRoulette.getCustomSpawns().get(dimensionId.toString());
         }
